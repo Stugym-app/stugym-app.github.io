@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Acceso anticipado · Editor con IA</title>
+<meta name="description" content="Lista privada del editor de video con IA. Acceso anticipado con 50% de descuento en el lanzamiento.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Manrope:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: invitación privada. Una pregunta por pantalla, filetes dorados finos, mucho aire */
+:root{
+  --bg:#0a0a0a; --panel:#111110; --line:#2a2722; --fg:#f4f1ea; --muted:#8f8a80;
+  --gold:#c9a45c; --gold-hi:#ecd6a0; --gold-lo:#9c7a3c; --gold-soft:rgba(201,164,92,.08); --err:#e0876a;
+  --serif:"Cormorant Garamond","Times New Roman",Georgia,serif;
+  --sans:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;color:var(--fg);font:16px/1.55 var(--sans);-webkit-font-smoothing:antialiased;
+  background:radial-gradient(120% 60% at 50% -10%,rgba(201,164,92,.10),transparent 60%),var(--bg);
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.wrap{max-width:560px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;
+  padding-left:max(22px,env(safe-area-inset-left,0px));padding-right:max(22px,env(safe-area-inset-right,0px));padding-block:26px 30px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.mark{font:500 11px/1 var(--sans);letter-spacing:.32em;text-transform:uppercase;color:var(--gold)}
+.count{font:500 11px/1 var(--sans);letter-spacing:.2em;color:var(--muted);font-variant-numeric:tabular-nums}
+.track{margin-top:18px;height:1px;background:var(--line)}
+.track i{display:block;height:1px;width:0;background:linear-gradient(90deg,var(--gold-lo),var(--gold-hi));transition:width .6s cubic-bezier(.2,.8,.2,1)}
+main{flex:1;display:flex;flex-direction:column;justify-content:center;padding-block:34px}
+.step{display:none;animation:in .6s cubic-bezier(.2,.8,.2,1)}
+.step.on{display:block}
+@keyframes in{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.eyebrow{font:600 11px/1 var(--sans);letter-spacing:.3em;text-transform:uppercase;color:var(--gold);margin:0 0 18px;display:flex;align-items:center;gap:12px}
+.eyebrow::after{content:"";height:1px;width:40px;background:var(--gold-lo)}
+h1,h2,.perks b,.deal strong,.scale .n,.seal span{font-variant-numeric:lining-nums}
+h1,h2{font-family:var(--serif);font-weight:500;line-height:1.02;margin:0;text-wrap:balance;letter-spacing:-.01em}
+h1{font-size:clamp(46px,12vw,72px)}
+h2{font-size:clamp(32px,8vw,44px)}
+h1 em,h2 em{font-style:italic;background:linear-gradient(180deg,var(--gold-hi),var(--gold) 60%,var(--gold-lo));-webkit-background-clip:text;background-clip:text;color:transparent}
+.lead{color:var(--muted);font-size:16px;margin:20px 0 0;max-width:42ch}
+.perks{margin:30px 0 0;padding:0;list-style:none;border-top:1px solid var(--line)}
+.perks li{display:flex;gap:16px;align-items:baseline;padding:14px 0;border-bottom:1px solid var(--line);font-size:15px}
+.perks b{font-family:var(--serif);font-weight:600;font-size:22px;color:var(--gold);min-width:64px}
+.hint{color:var(--muted);font-size:14px;margin:12px 0 0}
+.fields{display:grid;gap:22px;margin-top:30px}
+.f{display:grid;gap:8px;font:600 11px/1 var(--sans);letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+input[type=text],input[type=tel],textarea,select{width:100%;background:transparent;border:0;border-bottom:1px solid var(--line);color:var(--fg);
+  font:500 19px var(--sans);letter-spacing:0;text-transform:none;padding:10px 0 12px;border-radius:0;outline:none;transition:border-color .2s}
+textarea{min-height:84px;resize:vertical;font-size:16px}
+select{appearance:none;-webkit-appearance:none;cursor:pointer;padding-right:18px;
+  background:linear-gradient(45deg,transparent 50%,var(--gold) 50%) right 6px center/6px 6px no-repeat,linear-gradient(-45deg,transparent 50%,var(--gold) 50%) right 0 center/6px 6px no-repeat}
+select option{background:var(--panel);color:var(--fg)}
+input:focus,textarea:focus,select:focus{border-color:var(--gold)}
+input::placeholder,textarea::placeholder{color:#5a564f}
+.phone{display:grid;grid-template-columns:118px 1fr;gap:16px}
+.opts{display:grid;gap:10px;margin-top:28px}
+.opts.two{grid-template-columns:1fr 1fr}
+@media (max-width:420px){.opts.two{grid-template-columns:1fr}}
+.opt{position:relative}
+.opt input{position:absolute;opacity:0;pointer-events:none}
+.opt span{display:flex;align-items:center;gap:14px;padding:16px 18px;border:1px solid var(--line);border-radius:2px;background:rgba(255,255,255,.012);
+  cursor:pointer;font-weight:500;font-size:15px;transition:border-color .2s,background .2s,color .2s;user-select:none}
+.opt span::before{content:"";flex:none;width:14px;height:14px;border:1px solid var(--muted);transform:rotate(45deg);transition:all .2s}
+.opt span:hover{border-color:#4a443a}
+.opt input:checked+span{border-color:var(--gold);background:var(--gold-soft);color:#fff}
+.opt input:checked+span::before{border-color:var(--gold);background:var(--gold)}
+.opt input:focus-visible+span{outline:1px solid var(--gold);outline-offset:3px}
+.scale .n{font-family:var(--serif);font-size:20px;color:var(--gold);min-width:14px;font-weight:600}
+.scale .opt span::before{display:none}
+.other{margin-top:14px}
+.deal{margin-top:28px;border:1px solid var(--gold-lo);padding:18px 20px;display:flex;gap:18px;align-items:center;position:relative;
+  background:linear-gradient(135deg,rgba(201,164,92,.10),rgba(201,164,92,0) 60%)}
+.deal strong{font-family:var(--serif);font-weight:600;font-size:40px;line-height:1;background:linear-gradient(180deg,var(--gold-hi),var(--gold-lo));-webkit-background-clip:text;background-clip:text;color:transparent}
+.deal p{margin:0;font-size:14px}
+.deal small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.nav{display:flex;gap:10px;margin-top:30px}
+[hidden]{display:none!important}
+button{font:700 13px var(--sans);letter-spacing:.18em;text-transform:uppercase;border-radius:2px;padding:18px 22px;cursor:pointer;border:0;transition:filter .2s,transform .12s,opacity .2s}
+button:active{transform:scale(.985)}
+.go{flex:1;color:#1a1408;background:linear-gradient(180deg,var(--gold-hi),var(--gold) 55%,var(--gold-lo));box-shadow:0 10px 30px -12px rgba(201,164,92,.55)}
+.go:hover{filter:brightness(1.06)}
+.back{background:transparent;color:var(--muted);border:1px solid var(--line)}
+button:disabled{opacity:.55;cursor:not-allowed}
+button:focus-visible{outline:1px solid var(--gold-hi);outline-offset:3px}
+.err{color:var(--err);font-size:14px;margin:14px 0 0;min-height:1.2em}
+.seal{width:64px;height:64px;border:1px solid var(--gold);transform:rotate(45deg);display:grid;place-items:center;margin:0 0 34px 8px}
+.seal span{transform:rotate(-45deg);font-family:var(--serif);font-size:30px;color:var(--gold)}
+footer{color:#5f5a52;font-size:12px;text-align:center;letter-spacing:.02em}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="mark">Acceso anticipado</span>
+    <span class="count" id="count" aria-hidden="true">Invitación</span>
+  </header>
+  <div class="track" aria-hidden="true"><i id="bar"></i></div>
+
+  <main>
+    <form id="form" novalidate>
+      <!-- 0: portada -->
+      <section class="step on" data-step="0">
+        <p class="eyebrow">Lista privada</p>
+        <h1>Edición profesional, <em>en segundos</em>.</h1>
+        <p class="lead">Estoy creando un editor con inteligencia artificial que hace subtítulos, cortes, transiciones, efectos y motion graphics por vos. Calidad de agencia, a una fracción del costo.</p>
+        <ul class="perks">
+          <li><b>50%</b><span>de descuento en el lanzamiento, solo para la lista.</span></li>
+          <li><b>1 min</b><span>para completar tu lugar.</span></li>
+          <li><b>1 a 1</b><span>te escribo personalmente por WhatsApp.</span></li>
+        </ul>
+        <div class="nav"><button type="button" class="go" data-next>Reservar mi lugar</button></div>
+      </section>
+
+      <!-- 1: datos -->
+      <section class="step" data-step="1">
+        <p class="eyebrow">I · Tus datos</p>
+        <h2>¿Cómo te <em>llamás</em>?</h2>
+        <div class="fields">
+          <label class="f">Nombre<input type="text" id="nombre" name="nombre" autocomplete="given-name" maxlength="80" placeholder="Tu nombre" required></label>
+          <div class="f" role="group" aria-labelledby="wa-l"><span id="wa-l">WhatsApp</span>
+            <div class="phone">
+              <select id="pais" aria-label="Código de país">
+                <option value="54">🇦🇷 +54</option>
+                <option value="598">🇺🇾 +598</option>
+                <option value="56">🇨🇱 +56</option>
+                <option value="52">🇲🇽 +52</option>
+                <option value="57">🇨🇴 +57</option>
+                <option value="51">🇵🇪 +51</option>
+                <option value="595">🇵🇾 +595</option>
+                <option value="591">🇧🇴 +591</option>
+                <option value="593">🇪🇨 +593</option>
+                <option value="58">🇻🇪 +58</option>
+                <option value="506">🇨🇷 +506</option>
+                <option value="507">🇵🇦 +507</option>
+                <option value="1809">🇩🇴 +1 809</option>
+                <option value="34">🇪🇸 +34</option>
+                <option value="1">🇺🇸 +1</option>
+              </select>
+              <input type="tel" id="whatsapp" name="whatsapp" autocomplete="tel-national" inputmode="tel" maxlength="20" placeholder="11 2345 6789" aria-labelledby="wa-l" required>
+            </div>
+          </div>
+        </div>
+        <p class="hint">Te escribo yo mismo a este número cuando lancemos, con tu descuento.</p>
+      </section>
+
+      <!-- 2: nicho -->
+      <section class="step" data-step="2">
+        <p class="eyebrow">II · Perfil</p>
+        <h2>¿A qué nicho te <em>dedicás</em>?</h2>
+        <div class="opts">
+          <label class="opt"><input type="radio" name="nicho" value="Editor de videos"><span>Editor de videos</span></label>
+          <label class="opt"><input type="radio" name="nicho" value="Agencia"><span>Agencia (de contenido, de edición, etc.)</span></label>
+          <label class="opt"><input type="radio" name="nicho" value="Creador de contenido"><span>Creador de contenido</span></label>
+          <label class="opt"><input type="radio" name="nicho" value="Negocio o marca personal"><span>Negocio o marca personal</span></label>
+          <label class="opt"><input type="radio" name="nicho" value="Coach, mentor o infoproductos"><span>Coach, mentor o infoproductos</span></label>
+          <label class="opt"><input type="radio" name="nicho" value="Otro"><span>Otro</span></label>
+        </div>
+        <input class="other" type="text" id="nicho_otro" placeholder="Contame cuál" maxlength="120" hidden>
+      </section>
+
+      <!-- 3: videos por semana -->
+      <section class="step" data-step="3">
+        <p class="eyebrow">III · Volumen</p>
+        <h2>¿Cuántos videos harías por <em>semana</em>?</h2>
+        <div class="opts two">
+          <label class="opt"><input type="radio" name="videos_semana" value="1 a 3"><span>1 a 3</span></label>
+          <label class="opt"><input type="radio" name="videos_semana" value="4 a 7"><span>4 a 7</span></label>
+          <label class="opt"><input type="radio" name="videos_semana" value="8 a 15"><span>8 a 15</span></label>
+          <label class="opt"><input type="radio" name="videos_semana" value="16 a 30"><span>16 a 30</span></label>
+          <label class="opt"><input type="radio" name="videos_semana" value="Más de 30"><span>Más de 30</span></label>
+        </div>
+      </section>
+
+      <!-- 4: reto -->
+      <section class="step" data-step="4">
+        <p class="eyebrow">IV · Desafío</p>
+        <h2>¿Cuál es tu mayor reto al crear <em>videos</em>?</h2>
+        <div class="opts">
+          <label class="opt"><input type="radio" name="reto" value="Editar me lleva demasiado tiempo"><span>Editar me lleva demasiado tiempo</span></label>
+          <label class="opt"><input type="radio" name="reto" value="No consigo editores buenos o confiables"><span>No consigo editores buenos o confiables</span></label>
+          <label class="opt"><input type="radio" name="reto" value="La edición me sale cara"><span>La edición me sale cara</span></label>
+          <label class="opt"><input type="radio" name="reto" value="Mis videos no retienen a la gente"><span>Mis videos no retienen a la gente</span></label>
+          <label class="opt"><input type="radio" name="reto" value="Otro"><span>Otro</span></label>
+        </div>
+        <input class="other" type="text" id="reto_otro" placeholder="Contame cuál" maxlength="200" hidden>
+      </section>
+
+      <!-- 5: valor -->
+      <section class="step" data-step="5">
+        <p class="eyebrow">V · Valor</p>
+        <h2>¿Cuánto valor le ves a un video que se edita <em>solo</em>, en segundos?</h2>
+        <div class="opts scale">
+          <label class="opt"><input type="radio" name="valor" value="1"><span><b class="n">1</b>Poco valor</span></label>
+          <label class="opt"><input type="radio" name="valor" value="2"><span><b class="n">2</b>Algo de valor</span></label>
+          <label class="opt"><input type="radio" name="valor" value="3"><span><b class="n">3</b>Me interesa</span></label>
+          <label class="opt"><input type="radio" name="valor" value="4"><span><b class="n">4</b>Me sería muy útil</span></label>
+          <label class="opt"><input type="radio" name="valor" value="5"><span><b class="n">5</b>Me parece increíble y sin duda me ayudaría</span></label>
+        </div>
+      </section>
+
+      <!-- 6: inversión -->
+      <section class="step" data-step="6">
+        <p class="eyebrow">VI · Inversión</p>
+        <h2>¿Cuánto invertirías por mes en una IA que edite <em>todos</em> tus videos?</h2>
+        <p class="hint">Valores en dólares.</p>
+        <div class="opts two">
+          <label class="opt"><input type="radio" name="inversion" value="Menos de 10"><span>Menos de US$10</span></label>
+          <label class="opt"><input type="radio" name="inversion" value="10 a 20"><span>US$10 a 20</span></label>
+          <label class="opt"><input type="radio" name="inversion" value="20 a 30"><span>US$20 a 30</span></label>
+          <label class="opt"><input type="radio" name="inversion" value="30 a 40"><span>US$30 a 40</span></label>
+          <label class="opt"><input type="radio" name="inversion" value="40 a 50"><span>US$40 a 50</span></label>
+          <label class="opt"><input type="radio" name="inversion" value="50 a 100"><span>US$50 a 100</span></label>
+          <label class="opt"><input type="radio" name="inversion" value="Más de 100"><span>Más de US$100</span></label>
+          <label class="opt"><input type="radio" name="inversion" value="No pagaría"><span>No pagaría este servicio</span></label>
+        </div>
+      </section>
+
+      <!-- 7: funciones -->
+      <section class="step" data-step="7">
+        <p class="eyebrow">VII · Funciones</p>
+        <h2>¿Qué te gustaría que <em>haga</em> por vos?</h2>
+        <p class="hint">Elegí todas las que quieras.</p>
+        <div class="opts two">
+          <label class="opt"><input type="checkbox" name="funciones" value="Subtítulos animados"><span>Subtítulos animados</span></label>
+          <label class="opt"><input type="checkbox" name="funciones" value="Cortes de silencios y errores"><span>Cortes de silencios y errores</span></label>
+          <label class="opt"><input type="checkbox" name="funciones" value="Motion graphics"><span>Motion graphics</span></label>
+          <label class="opt"><input type="checkbox" name="funciones" value="Efectos de sonido"><span>Efectos de sonido</span></label>
+          <label class="opt"><input type="checkbox" name="funciones" value="Zooms y transiciones"><span>Zooms y transiciones</span></label>
+          <label class="opt"><input type="checkbox" name="funciones" value="Imágenes y clips de apoyo"><span>Imágenes y clips de apoyo</span></label>
+          <label class="opt"><input type="checkbox" name="funciones" value="Plantillas con mi marca"><span>Plantillas con mi marca</span></label>
+          <label class="opt"><input type="checkbox" name="funciones" value="Clips cortos desde videos largos"><span>Clips cortos desde videos largos</span></label>
+        </div>
+        <div class="fields"><label class="f">¿Algo más?<textarea id="funciones_otro" maxlength="600" placeholder="Escribilo acá"></textarea></label></div>
+        <div class="deal"><strong>50%</strong><p>Tendrás un <b>50% de descuento</b> cuando lance el producto.<small>Exclusivo para quienes estén en esta lista.</small></p></div>
+      </section>
+
+      <!-- 8: listo -->
+      <section class="step" data-step="8">
+        <div class="seal" aria-hidden="true"><span>✓</span></div>
+        <p class="eyebrow">Lugar reservado</p>
+        <h2>Ya estás adentro, <em id="who">gracias</em>.</h2>
+        <p class="lead">Te voy a escribir personalmente por WhatsApp cuando lancemos, con tu 50% de descuento. Mientras tanto, seguí el proceso en TikTok: voy contando todo.</p>
+      </section>
+
+      <p class="err" id="err" role="alert"></p>
+      <div class="nav" id="nav" hidden>
+        <button type="button" class="back" id="back">Atrás</button>
+        <button type="button" class="go" id="next">Continuar</button>
+      </div>
+    </form>
+  </main>
+  <footer>Tu número se usa solo para escribirte sobre el lanzamiento.</footer>
+</div>
+
+<script>
+// Configuración de Supabase (clave publicable: solo permite insertar respuestas)
+const SUPABASE_URL = "https://zaeryyrehwxlwwcgsxxq.supabase.co";
+const SUPABASE_KEY = "sb_publishable_3g11U_4lUpRVtTYbyjt3Pg_YvPnYbmw";
+
+const steps = [...document.querySelectorAll(".step")];
+const LAST_Q = 7, DONE = 8;
+let cur = 0, sending = false;
+const $ = id => document.getElementById(id);
+const bar = $("bar"), nav = $("nav"), next = $("next"), back = $("back"), err = $("err"), form = $("form"), count = $("count");
+
+const val = n => (form.querySelector(`input[name="${n}"]:checked`) || {}).value || "";
+const vals = n => [...form.querySelectorAll(`input[name="${n}"]:checked`)].map(i => i.value);
+const digits = s => s.replace(/\D/g, "");
+
+function show(i){
+  steps[cur].classList.remove("on"); cur = i; steps[cur].classList.add("on");
+  err.textContent = "";
+  bar.style.width = (Math.min(cur, DONE) / DONE * 100) + "%";
+  nav.hidden = cur === 0 || cur === DONE;
+  count.textContent = cur === 0 ? "Invitación" : cur === DONE ? "Confirmado" : `0${cur} / 07`;
+  next.textContent = cur === LAST_Q ? "Reservar con 50% OFF" : "Continuar";
+  if (cur === 1) setTimeout(() => $("nombre").focus(), 60);
+  window.scrollTo({top:0, behavior:"smooth"});
+}
+
+function check(){
+  switch(cur){
+    case 1: {
+      if ($("nombre").value.trim().length < 2) return "Escribí tu nombre.";
+      const d = digits($("whatsapp").value);
+      if (d.length < 6 || d.length > 15) return "Revisá el número de WhatsApp: escribilo con código de área, sin el 0 ni el 15.";
+      return "";
+    }
+    case 2: if (!val("nicho")) return "Elegí una opción."; if (val("nicho")==="Otro" && !$("nicho_otro").value.trim()) return "Contame cuál es tu nicho."; return "";
+    case 3: return val("videos_semana") ? "" : "Elegí una opción.";
+    case 4: if (!val("reto")) return "Elegí una opción."; if (val("reto")==="Otro" && !$("reto_otro").value.trim()) return "Contame cuál es tu reto."; return "";
+    case 5: return val("valor") ? "" : "Elegí una opción.";
+    case 6: return val("inversion") ? "" : "Elegí una opción.";
+    case 7: return (vals("funciones").length || $("funciones_otro").value.trim()) ? "" : "Elegí al menos una función o escribí la tuya.";
+  }
+  return "";
+}
+
+// Número listo para abrir en wa.me (Argentina lleva 9 después del 54)
+function waNumber(){
+  const cc = $("pais").value;
+  let n = digits($("whatsapp").value).replace(/^0+/, "");
+  if (cc === "54") { n = n.replace(/^9/, ""); n = n.replace(/^(\d{2,4})15(\d{6,8})$/, "$1$2"); return "549" + n; }
+  return cc + n;
+}
+
+async function submit(){
+  if (SUPABASE_URL.startsWith("__")) { await new Promise(r => setTimeout(r, 700)); return "demo"; }
+  const row = {
+    nombre: $("nombre").value.trim(),
+    whatsapp: waNumber(),
+    whatsapp_ingresado: "+" + $("pais").value + " " + $("whatsapp").value.trim(),
+    nicho: val("nicho"), nicho_otro: $("nicho_otro").value.trim() || null,
+    videos_semana: val("videos_semana"),
+    reto: val("reto"), reto_otro: $("reto_otro").value.trim() || null,
+    valor: parseInt(val("valor"), 10),
+    inversion: val("inversion"),
+    funciones: vals("funciones"), funciones_otro: $("funciones_otro").value.trim() || null,
+    origen: new URLSearchParams(location.search).get("utm_source") || "directo"
+  };
+  const r = await fetch(SUPABASE_URL + "/rest/v1/lista_espera", {
+    method:"POST",
+    headers:{ "apikey":SUPABASE_KEY, "Authorization":"Bearer "+SUPABASE_KEY, "Content-Type":"application/json", "Prefer":"return=minimal" },
+    body: JSON.stringify(row)
+  });
+  if (r.status === 409) return "dup";
+  if (!r.ok) throw new Error(r.status);
+  return "ok";
+}
+
+async function goNext(){
+  if (sending) return;
+  const m = check(); if (m) { err.textContent = m; return; }
+  if (cur < LAST_Q) return show(cur + 1);
+  sending = true; next.disabled = true; next.textContent = "Reservando…";
+  try {
+    await submit();
+    $("who").textContent = $("nombre").value.trim().split(" ")[0] || "gracias";
+    show(DONE);
+  } catch (e) {
+    err.textContent = "No se pudo enviar. Revisá tu conexión y tocá el botón de nuevo.";
+    next.textContent = "Reservar con 50% OFF";
+  } finally { sending = false; next.disabled = false; }
+}
+
+document.querySelector("[data-next]").addEventListener("click", () => show(1));
+next.addEventListener("click", goNext);
+back.addEventListener("click", () => show(Math.max(0, cur - 1)));
+form.addEventListener("submit", e => { e.preventDefault(); goNext(); });
+form.addEventListener("keydown", e => { if (e.key === "Enter" && e.target.tagName !== "TEXTAREA") { e.preventDefault(); goNext(); } });
+
+// Elegir una opción única avanza sola (salvo "Otro", que pide texto)
+form.addEventListener("change", e => {
+  const t = e.target;
+  ["nicho","reto"].forEach(g => { if (t.name === g) { const o = $(g+"_otro"); o.hidden = t.value !== "Otro"; if (!o.hidden) o.focus(); } });
+  if (t.type === "radio" && t.value !== "Otro") setTimeout(() => { if (steps[cur].contains(t)) goNext(); }, 320);
+});
+</script>
+</body>
+</html>
